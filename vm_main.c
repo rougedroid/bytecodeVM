@@ -154,11 +154,4 @@ int main(){
     printf("Output Byte: %02x \n", output_byte[0]);
 
   }
-
-
-  
-
-
-
-
 }
