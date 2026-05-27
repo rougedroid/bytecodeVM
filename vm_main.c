@@ -71,6 +71,9 @@ int main(){
   //
   // DEBUG SETUP
   //char in_commands[] = "[WRITE_CONST_INT][0000000100000100][0000000000000101][WRITE_CONST_INT][0000000100000101][0000000000000111][OP_ADD][0000000100000100][0000000100000101][OP_LOAD_REG][0000000000000001][0000000100000100][WRITE_CONST_INT][0000000100000101][0000000000000011][OP_ADD][0000000100000101][0000000100000100][OP_LOAD_REG][0000000000000001][0000000100000110]";
+  //
+  // NOTE: 
+  // SWITCH TO ACTUAL BINARY. ADAPT CURRENT SYSTEM TO BINARY.
   char in_commands[] = "[OP_NONE][OP_RETURN][0001001110001000]";
   const char delimeters[] = "[]";
   char * in_commands_bin = malloc(sizeof(char)*400);
@@ -148,6 +151,8 @@ int main(){
       buffer_return(output);
       // Giving output 500 for adr but actually printing 04 which is datablocks + 502 address * Layman address god knows where that 2 offset came from.
       // Above error was for memcpy only. wth man......
+    } else if (op == WRITE_CONST_INT) {
+      
     }
 
     unsigned char * output_byte = (unsigned char *)outputbuffer;
