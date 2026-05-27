@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+
 
 
 
@@ -39,7 +41,9 @@ int main(){
   // OP_SUB gives out at --> 0x0002 and Sets REMAINDER BIT ON 0x0003
   //
   // 
-  char in_commands[] = "[WRITE_CONST_INT][0000000100000100][0000000000000101][WRITE_CONST_INT][0000000100000101][0000000000000111][OP_ADD][0000000100000100][0000000100000101][OP_LOAD_REG][0000000000000001][0000000100000100][WRITE_CONST_INT][0000000100000101][0000000000000011][OP_ADD][0000000100000101][0000000100000100][OP_LOAD_REG][00000000000000001][0000000100000110]";
+  //
+  // DEBUG SETUP
+  char in_commands[] = "[WRITE_CONST_INT][0000000100000100][0000000000000101][WRITE_CONST_INT][0000000100000101][0000000000000111][OP_ADD][0000000100000100][0000000100000101][OP_LOAD_REG][0000000000000001][0000000100000100][WRITE_CONST_INT][0000000100000101][0000000000000011][OP_ADD][0000000100000101][0000000100000100][OP_LOAD_REG][0000000000000001][0000000100000110]";
   const char delimeters[] = "[]";
   char * in_commands_bin = malloc(sizeof('o')*400);
   char *token = strtok(in_commands, delimeters);
@@ -74,4 +78,25 @@ int main(){
     token = strtok(NULL, delimeters);
   }
   printf("%s \n", in_commands_bin);
+  
+  // ACTUAL DECODER AND EXECUTER
+  int total_char = strlen(in_commands_bin);
+  instruction_len = total_char/16;
+
+  for (int i = 0; i < instruction_len; i ++){
+    char chunk[17];
+    memcpy(chunk, in_commands_bin + (i*16), 16);
+    chunk[16] = '\0';
+    uint16_t numeric_value = (uint16_t)strtoul(chunk, NULL, 2);
+    Opcodes op = (Opcodes)numeric_value;
+    printf("Hex Value: 0x%04x\n", op);
+    
+
+    
+
+    
+  }
+  
+
+
 }
