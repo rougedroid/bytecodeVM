@@ -19,17 +19,23 @@ typedef enum{
 
 // We will have it act like a chip only. we will have all the input also "take" us chips space. basically all the code is stored in data lines. 
 //
-// Total chip data addresses: 0x0000 to 0xFFF0 -> 65520 bits last one excluded 
+// Total chip data addresses: 0x0000 to 0xFFF0 -> 65521*4 bits => each address is 1 Byte last one excluded.
 // OUTPUT PIN ADDRESSES: 0xFFF0 - 0xFFFF -> 16 bits both included
 //
 
-// 16-BIT Operating System 
+// 16-BIT Architecture 
 // Basic Turing Machine:
 // Jump To commands.
 // If-Else Statements
 // Add Sub 
 // REG Addresses-> 0x0100 - 0x01FF 
 //
+
+void * datablocks = malloc(sizeof('a')*65521); // Getting address space for the "Data" i.e. 65521 bytes 
+void * outputbuffer = malloc(sizeof('a')*16); // Getting output buffer -> 16 bytes 
+
+//uint16_t * read_next()
+
 int main(){
   // X = 5 + 7
   // Y = X + 3 
@@ -72,7 +78,7 @@ int main(){
     }else {
       memcpy(in_commands_bin + (instruction_len * 16), token, 16);
     } 
-    
+        
 
     instruction_len++;
     token = strtok(NULL, delimeters);
@@ -82,7 +88,8 @@ int main(){
   // ACTUAL DECODER AND EXECUTER
   int total_char = strlen(in_commands_bin);
   instruction_len = total_char/16;
-
+  
+// OUTPUT OP_Codes for verification
   for (int i = 0; i < instruction_len; i ++){
     char chunk[17];
     memcpy(chunk, in_commands_bin + (i*16), 16);
@@ -90,13 +97,9 @@ int main(){
     uint16_t numeric_value = (uint16_t)strtoul(chunk, NULL, 2);
     Opcodes op = (Opcodes)numeric_value;
     printf("Hex Value: 0x%04x\n", op);
-    
-
-    
-
-    
   }
   
+
 
 
 }
