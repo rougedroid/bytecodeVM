@@ -39,35 +39,39 @@ int main(){
   // OP_SUB gives out at --> 0x0002 and Sets REMAINDER BIT ON 0x0003
   //
   // 
-  char in_commands[] = "[WRITE_CONST_INT][0x0104][0x0005][WRITE_CONST_INT][0x0105][0x0007][OP_ADD][0x0104][0x0105][OP_LOAD_REG][0x0001][x0104][WRITE_CONST_INT][0X0105][0X0003][OP_ADD][0X0105][0X0104][OP_LOAD_REG][0x0001][0x0106]";
+  char in_commands[] = "[WRITE_CONST_INT][0000000100000100][0000000000000101][WRITE_CONST_INT][0000000100000101][0000000000000111][OP_ADD][0000000100000100][0000000100000101][OP_LOAD_REG][0000000000000001][0000000100000100][WRITE_CONST_INT][0000000100000101][0000000000000011][OP_ADD][0000000100000101][0000000100000100][OP_LOAD_REG][00000000000000001][0000000100000110]";
   const char delimeters[] = "[]";
-  char *in_commands_bin[336];
+  char * in_commands_bin = malloc(sizeof('o')*400);
   char *token = strtok(in_commands, delimeters);
   int instruction_len = 0;
+  for (int i = 0; i < 400; i++){
+    memcpy((in_commands_bin + i), "\0", 1);
+  }
   while (token!=NULL){
-    if (strcmp(token, "WRITE_CONST_INT"))  {
-      strcpy(*(in_commands_bin+instruction_len), "0000000000100000");
-    }else if(strcmp(token, "OP_NONE"))  {
-      strcpy(*(in_commands_bin+instruction_len), "0000000000000000");
-    }else if( strcmp(token, "OP_RETURN")){
-      strcpy(*(in_commands_bin+instruction_len), "0000000000100010");
+    if (strcmp(token, "WRITE_CONST_INT") == 0)  {
+      memcpy(in_commands_bin + (instruction_len * 16), "0000000000100000", 16);
+    }else if(strcmp(token, "OP_NONE") == 0)  {
+      memcpy(in_commands_bin + (instruction_len * 16), "0000000000000000", 16);
+    }else if( strcmp(token, "OP_RETURN")==0){
+      memcpy(in_commands_bin + (instruction_len * 16), "0000000000100010", 16);
 
-    }else if (strcmp(token, "OP_ADD")) {
-      strcpy(*(in_commands_bin+instruction_len), "0000000000100011");
-    }else if (strcmp(token, "OP_LOAD_REG")) {
-      strcpy(*(in_commands_bin+instruction_len), "0000000000100101");
+    }else if (strcmp(token, "OP_ADD")==0) {
+      memcpy(in_commands_bin + (instruction_len * 16), "0000000000100011", 16);
+    }else if (strcmp(token, "OP_LOAD_REG")==0) {
+      memcpy(in_commands_bin + (instruction_len * 16), "0000000000100101", 16);
      
-    }else if (strcmp(token, "OP_SUB")) {
-      strcpy(*(in_commands_bin+instruction_len), "0000000000100110");
+    }else if (strcmp(token, "OP_SUB")==0) {
+      memcpy(in_commands_bin + (instruction_len * 16), "0000000000100110", 16);
     
-    }else if (strcmp(token, "OP_JUMP")) {
-      strcpy(*(in_commands_bin+instruction_len), "0000000000100111");
+    }else if (strcmp(token, "OP_JUMP")==0) {
+      memcpy(in_commands_bin + (instruction_len * 16), "0000000000100111", 16);
     }else {
-      strcpy(*(in_commands_bin+instruction_len), token);
+      memcpy(in_commands_bin + (instruction_len * 16), token, 16);
     } 
     
 
-    instruction_len+=8;
+    instruction_len++;
+    token = strtok(NULL, delimeters);
   }
   printf("%s \n", in_commands_bin);
 }
