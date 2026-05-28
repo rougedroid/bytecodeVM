@@ -29,7 +29,7 @@ typedef enum{
 }Opcodes;
 
 uint16_t test_values[] = {
-  OP_RETURN, 0x1388
+  OP_NONE, OP_RETURN, 0x1388
 };
 
 void init(){
@@ -38,7 +38,7 @@ void init(){
   memset(datablocks, 0, 65521);
 
   memset(outputbuffer, 0, 2);
-  memset(datablocks, 4, 5002);
+  datablocks[5000]=4;
 }
 
 void outputtobuffer(uint8_t * output){
@@ -62,20 +62,17 @@ int main(){
 //      memset(output, 0x0007, 2);
       *output = (uint8_t)0x07;
       outputtobuffer(output);
-    }else if (op == OP_RETURN){
+    } else if (op == OP_RETURN) {
       printf("In OP_RETURN \n");
-      i++;
-      uint8_t output;
-      uint16_t addr;
-
-      addr = *((uint16_t *)((uint8_t *)datablocks + i*2));
+      uint16_t addr = *((uint16_t *)((uint8_t *)datablocks + (i + 1) * 2));
       printf("Addr: %d \n", addr);
-//      memcpy(&output, (datablocks + addr), 2);
-      output = *((char *)(datablocks + addr)); // There is a 2 byte shift error again. and idk what is causing it.
-      output = *((char *)(datablocks + 5000));
-      //memset(&output, 0x0008, 2 );
-      outputtobuffer(&output);
+      i++; // consume the operand word
 
+      uint8_t output = ((uint8_t *)datablocks)[addr];
+      // The mysterious byte monster has struck again. ITS STILL SHIFTING BY 2 BYTES.
+      // SHIFT ERROR FIXED. MEMSET WAS COPYING 5000 BYTES FROM 0 TO 4999. So when i called 5000, it was on 0. but when i used memset to set 5002, and called 5000, memset set the bytes from 0 to 5001. So then, it appeared like there was a shift of 2 bytes. 
+      outputtobuffer(&output);
+      
     }
     
 
