@@ -103,12 +103,15 @@ int main(){
     }else {
       memcpy(in_commands_bin + (instruction_len * 16), token, 16);
     } 
-       
+    
 
     instruction_len++;
     token = strtok(NULL, delimeters);
   }
   
+  uint16_t * instructions[] = {
+    OP_NONE, OP_RETURN, 0x1388
+  }
 
 
   printf("%s \n", in_commands_bin);
