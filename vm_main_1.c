@@ -27,6 +27,7 @@ typedef enum{
   LOAD_REG = 0x0023, // OPCODE [REG] 
   OP_SUB = 0x0026, // OPCODE [REG 1] [REG 2] --> again put in default reg. have 1 bit for carry. 
   OP_JUMP = 0x0027, // OPCODE [REG]
+  OP_CMP = 0x0028, // OPCODE [REG1] [REG2] [JMP1] [JMP2] --> compares if both values in REG1 and REG2 are same. If true, it jumps toJMP1 pointer. If false it jumps to JMP2 pointer. 
 }Opcodes;
 
 uint16_t test_values[] = {
@@ -136,17 +137,36 @@ int main(){
 
       i++;
       uint16_t addr = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
-      i = addr -1;
+      i = (addr/2) -1;
       uint8_t * output = malloc(sizeof(uint8_t));
       *output = (uint8_t)0x00;
       outputtobuffer(output);
-    } else{
+    } else if (op == OP_CMP) {
+
+      
+      
+      i++;
+      uint16_t addr1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i++;
+      uint16_t addr2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i++;
+      uint16_t jmp1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i++;
+      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      
+      if (datablocks[addr1]==datablocks[addr2]){
+        i = (jmp1/2) -1;
+      }else{
+        i = (jmp2/2) -1;
+      }
+
+    }else{
 
       uint8_t * output = malloc(sizeof(uint8_t));
       *output = (uint8_t)0x00;
       outputtobuffer(output);
     }
-
+    
     
 
     uint8_t outputbyte;
