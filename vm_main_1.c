@@ -73,6 +73,16 @@ int main(){
       // SHIFT ERROR FIXED. MEMSET WAS COPYING 5000 BYTES FROM 0 TO 4999. So when i called 5000, it was on 0. but when i used memset to set 5002, and called 5000, memset set the bytes from 0 to 5001. So then, it appeared like there was a shift of 2 bytes. 
       outputtobuffer(&output);
       
+    } else if (op == WRITE_CONST_INT){
+      
+      uint16_t addr = *((uint16_t *)((uint8_t *)datablocks + (i + 1) * 2));
+      
+      i++; // consume the operand word
+      uint16_t value = *((uint16_t *)((uint8_t *)datablocks + (i + 1) * 2));
+      i++;
+      datablocks[addr] = (uint8_t) value;
+
+      
     }
     
 
