@@ -57,16 +57,16 @@ int main(){
     //memcpy(&op, datablocks + i*2, 2); // Skipping 1 i for returning buffer is fine, cuz they are 16 bit address so like an address value also takes up 2 bytes. so does an opcode. 
     op = *((uint16_t *)(datablocks + i*2));
 //    printf("Op Value: %" PRIu16 "\n", op);
-    printf("Current op : %d \n", op);
+//    printf("Current op : %d \n", op);
     if (op == OP_NONE){
-      printf("In OP1 \n");
+//      printf("In OP1 \n");
       uint8_t * output = malloc(sizeof(uint8_t));
       *output = (uint8_t)0x00;
       outputtobuffer(output);
     } else if (op == OP_RETURN) {
-      printf("In OP_RETURN \n");
+//      printf("In OP_RETURN \n");
       uint16_t addr = *((uint16_t *)((uint8_t *)datablocks + (i + 1) * 2));
-      printf("Addr: %d \n", addr);
+//      printf("Addr: %d \n", addr);
       i++; // consume the operand word
 
       uint8_t output = ((uint8_t *)datablocks)[addr];
@@ -111,8 +111,8 @@ int main(){
       uint8_t * output = malloc(sizeof(uint8_t));
       *output = (uint8_t)0x00;
       outputtobuffer(output);
-    } else if (op == OP_SUB) {
 
+    } else if (op == OP_SUB) {
       
       i++;
       uint16_t addr1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
@@ -132,7 +132,6 @@ int main(){
       *output = (uint8_t)0x00;
       outputtobuffer(output);
 
-
     } else if (op == OP_JUMP) {
 
       i++;
@@ -141,10 +140,8 @@ int main(){
       uint8_t * output = malloc(sizeof(uint8_t));
       *output = (uint8_t)0x00;
       outputtobuffer(output);
-    } else if (op == OP_CMP) {
 
-      
-      
+    } else if (op == OP_CMP) {
       i++;
       uint16_t addr1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       i++;
@@ -159,16 +156,11 @@ int main(){
       }else{
         i = (jmp2/2) -1;
       }
-
     }else{
-
       uint8_t * output = malloc(sizeof(uint8_t));
       *output = (uint8_t)0x00;
       outputtobuffer(output);
     }
-    
-    
-
     uint8_t outputbyte;
     memcpy(&outputbyte, outputbuffer, 1);
     printf("Output Buffer Value: %d \n", outputbyte);
