@@ -15,6 +15,7 @@ uint8_t * outputbuffer;
 // 
 // Output Buffer address 0xFFFF --> Last 8 bits
 // Default output and error buffers etc etc from 0xFFF0 -> 0xFFF7
+// Addition Result: 0xFFF1 
 //
 
 typedef enum{
@@ -29,7 +30,7 @@ typedef enum{
 }Opcodes;
 
 uint16_t test_values[] = {
-  OP_NONE, OP_RETURN, 0x1388
+  WRITE_CONST_INT, 0x0104, 0x0005, WRITE_CONST_INT, 0x0105, 0x0007, OP_ADD, 0x0104, 0x0105, OP_LOAD_REG, 0xFFF1, 0x0104, WRITE_CONST_INT, 0x0105, 0x0003, OP_ADD, 0x0105, 0x0104, OP_LOAD_REG, 0xFFF1, 0x0106, OP_RETURN, 0x0106
 };
 
 void init(){
@@ -59,8 +60,7 @@ int main(){
     if (op == OP_NONE){
       printf("In OP1 \n");
       uint8_t * output = malloc(sizeof(uint8_t));
-//      memset(output, 0x0007, 2);
-      *output = (uint8_t)0x07;
+      *output = (uint8_t)0x00;
       outputtobuffer(output);
     } else if (op == OP_RETURN) {
       printf("In OP_RETURN \n");
@@ -82,8 +82,71 @@ int main(){
       i++;
       datablocks[addr] = (uint8_t) value;
 
+      uint8_t * output = malloc(sizeof(uint8_t));
+      *output = (uint8_t)0x00;
+
+      outputtobuffer(output);
       
+    } else if (op == OP_ADD) {
+      i++;
+      uint16_t addr1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i++;
+      uint16_t addr2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+
+      datablocks[0xFFF1] = datablocks[addr1] + datablocks[addr2];
+      uint8_t * output = malloc(sizeof(uint8_t));
+      *output = (uint8_t)0x00;
+      outputtobuffer(output);
+      
+    } else if (op == OP_LOAD_REG) {
+      
+      i++;
+      uint16_t addr1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i++;
+      uint16_t addr2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      
+      datablocks[addr2] = datablocks[addr1];
+
+      uint8_t * output = malloc(sizeof(uint8_t));
+      *output = (uint8_t)0x00;
+      outputtobuffer(output);
+    } else if (op == OP_SUB) {
+
+      
+      i++;
+      uint16_t addr1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i++;
+      uint16_t addr2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      
+      int k = datablocks[addr1] - datablocks[addr2];
+      if (k>=0){
+        datablocks[0xFFF2] = k;
+
+      } else {
+        datablocks[0xFFF3] = 1;
+        datablocks[0xFFF2] = k;
+      }
+
+      uint8_t * output = malloc(sizeof(uint8_t));
+      *output = (uint8_t)0x00;
+      outputtobuffer(output);
+
+
+    } else if (op == OP_JUMP) {
+
+      i++;
+      uint16_t addr = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i = addr -1;
+      uint8_t * output = malloc(sizeof(uint8_t));
+      *output = (uint8_t)0x00;
+      outputtobuffer(output);
+    } else{
+
+      uint8_t * output = malloc(sizeof(uint8_t));
+      *output = (uint8_t)0x00;
+      outputtobuffer(output);
     }
+
     
 
     uint8_t outputbyte;
