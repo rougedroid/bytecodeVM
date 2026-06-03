@@ -28,11 +28,17 @@ typedef enum{
   OP_SUB = 0x0026, // OPCODE [REG 1] [REG 2] --> again put in default reg. have 1 bit for carry. 
   OP_JUMP = 0x0027, // OPCODE [REG]
   OP_CMP = 0x0028, // OPCODE [REG1] [REG2] [JMP1] [JMP2] --> compares if both values in REG1 and REG2 are same. If true, it jumps toJMP1 pointer. If false it jumps to JMP2 pointer. 
+  OP_JMP_RELP = 0x0029, // OPCODE [VALUE] --> Goes forward by value number of bytes. (value must be even number) 
+  OP_JMP_RELN = 0x0030, // OPCODE [VALUE] --> Goes back by value number of bytes. (value must be even)
 }Opcodes;
-
+// Note to self: A future reimplementation is required. Right now, there are too many arbitrary constraints for this to be a VM. In future, simulate a real chip from datasheet. And encode those constraints and implement clock cycles also. 
+//
 uint16_t test_values[] = {
   WRITE_CONST_INT, 0x0104, 0x0005, WRITE_CONST_INT, 0x0105, 0x0007, OP_ADD, 0x0104, 0x0105, OP_LOAD_REG, 0xFFF1, 0x0104, WRITE_CONST_INT, 0x0105, 0x0003, OP_ADD, 0x0105, 0x0104, OP_LOAD_REG, 0xFFF1, 0x0106, OP_RETURN, 0x0106
 };
+// rn the integers accepted are 16 bits. i.e. 2 bytes, but we process only single byte integers. 
+// Option 1: make it 1 byte integers -> horrible for everything will have to redesign everything. 
+// Option 2: make it process 2 byte integers and let it output 2 bytes. -> Much simpler and better. 
 
 void init(){
   datablocks = malloc(sizeof(uint8_t)*65521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
@@ -156,6 +162,16 @@ int main(){
       }else{
         i = (jmp2/2) -1;
       }
+    }else if (op == OP_JMP_RELP) {
+
+      i++;
+      uint16_t value = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      i = i - (value/2);
+    }else if (op == OP_JMP_RELN) {
+      i++;
+      uint16_t addr1 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+
+      i = i - (value/2);
     }else{
       uint8_t * output = malloc(sizeof(uint8_t));
       *output = (uint8_t)0x00;
