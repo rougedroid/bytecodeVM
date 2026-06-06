@@ -63,7 +63,7 @@ int main(){
   for (int i = 0; i < instruction_len; i++){
     //memcpy(&op, datablocks + i*2, 2); // Skipping 1 i for returning buffer is fine, cuz they are 16 bit address so like an address value also takes up 2 bytes. so does an opcode. 
     op = *((uint16_t *)(datablocks + i*2));
-    printf("Op Code: 0x%04x\n", op);
+//    printf("Op Code: 0x%04x\n", op);
     if (op == OP_NONE){
 //      printf("In OP1 \n");
       uint8_t * output = malloc(sizeof(uint8_t));
