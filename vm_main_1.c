@@ -13,7 +13,7 @@ uint8_t * outputbuffer;
 // Data blocks from address space: 0x0000 to 0xFFF0 -> 65521 Address spaces. Changable Memory. 
 // Each pointer points to 1 Byte of data. 
 // 
-// Output Buffer address 0xFFFF --> Last 8 bits
+// Output Buffer address 0xFFFE - 0xFFFF --> Last 8 bits
 // Default output and error buffers etc etc from 0xFFF0 -> 0xFFF7
 // Addition Result: 0xFFF1 
 //
@@ -50,8 +50,8 @@ void init(){
   datablocks[5000]=4;
 }
 
-void outputtobuffer(uint8_t * output){
-  memcpy(outputbuffer, output, 1);
+void outputtobuffer(uint16_t * output){
+  memcpy(outputbuffer, output, 2);
 }
 
 int main(){
@@ -66,8 +66,8 @@ int main(){
 //    printf("Op Code: 0x%04x\n", op);
     if (op == OP_NONE){
 //      printf("In OP1 \n");
-      uint8_t * output = malloc(sizeof(uint8_t));
-      *output = (uint8_t)0x00;
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x00;
       outputtobuffer(output);
     } else if (op == OP_RETURN) {
 //      printf("In OP_RETURN \n");
@@ -75,7 +75,7 @@ int main(){
 //      printf("Addr: %d \n", addr);
       i++; // consume the operand word
 
-      uint8_t output = ((uint8_t *)datablocks)[addr];
+      uint16_t output = ((uint8_t *)datablocks)[addr];
       // The mysterious byte monster has struck again. ITS STILL SHIFTING BY 2 BYTES.
       // SHIFT ERROR FIXED. MEMSET WAS COPYING 5000 BYTES FROM 0 TO 4999. So when i called 5000, it was on 0. but when i used memset to set 5002, and called 5000, memset set the bytes from 0 to 5001. So then, it appeared like there was a shift of 2 bytes. 
       outputtobuffer(&output);
@@ -87,10 +87,10 @@ int main(){
       i++; // consume the operand word
       uint16_t value = *((uint16_t *)((uint8_t *)datablocks + (i + 1) * 2));
       i++;
-      datablocks[addr] = (uint8_t) value;
-
-      uint8_t * output = malloc(sizeof(uint8_t));
-      *output = (uint8_t)0x00;
+      datablocks[addr] = (uint16_t) value;
+      
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x0000;
 
       outputtobuffer(output);
       
@@ -101,8 +101,8 @@ int main(){
       uint16_t addr2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
 
       datablocks[0xFFF1] = datablocks[addr1] + datablocks[addr2];
-      uint8_t * output = malloc(sizeof(uint8_t));
-      *output = (uint8_t)0x00;
+      uint16_t * output = malloc(sizeof(uint8_t));
+      *output = (uint16_t)0x0000;
       outputtobuffer(output);
       
     } else if (op == OP_LOAD_REG) {
@@ -114,8 +114,8 @@ int main(){
       
       datablocks[addr2] = datablocks[addr1];
 
-      uint8_t * output = malloc(sizeof(uint8_t));
-      *output = (uint8_t)0x00;
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x0000;
       outputtobuffer(output);
 
     } else if (op == OP_SUB) {
@@ -134,8 +134,8 @@ int main(){
         datablocks[0xFFF2] = k;
       }
 
-      uint8_t * output = malloc(sizeof(uint8_t));
-      *output = (uint8_t)0x00;
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x00;
       outputtobuffer(output);
 
     } else if (op == OP_JUMP) {
@@ -143,8 +143,8 @@ int main(){
       i++;
       uint16_t addr = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       i = (addr/2) -1;
-      uint8_t * output = malloc(sizeof(uint8_t));
-      *output = (uint8_t)0x00;
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x00;
       outputtobuffer(output);
 
     } else if (op == OP_CMP) {
@@ -187,12 +187,12 @@ int main(){
 
       i = i - (value/2);
     }else{
-      uint8_t * output = malloc(sizeof(uint8_t));
-      *output = (uint8_t)0x00;
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x00;
       outputtobuffer(output);
     }
-    uint8_t outputbyte;
-    memcpy(&outputbyte, outputbuffer, 1);
+    uint16_t outputbyte;
+    memcpy(&outputbyte, outputbuffer, 2);
     printf("Output Buffer Value: %d \n", outputbyte);
   }
 }
