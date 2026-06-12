@@ -19,7 +19,7 @@ uint8_t * outputbuffer;
 // Subtraction Result: 0xFFF3 and 0xFFF4 
 // Overflow Bit: 0xFFF5 and 0xFFF6
 // Multiplication Result:  
-//
+// After changing the data blocks type, there is no longer a need to have 2 bytes for each. But just keeping the diffs cuzz lazyyyyy :) 
 
 typedef enum{
   WRITE_CONST_INT = 0x0020, // OPCODE [REG] [Value] Value is 16 bits so 15 bits of signed int. INT Range = -32768 to +32768.
@@ -191,7 +191,31 @@ int main(){
       uint16_t value = *((uint16_t *)(datablocks + (i)));
 
       i = i - (value/2);
-    }else{
+    }else if (op == OP_MUL) {
+
+      i++;
+      uint16_t addr1 = *((uint16_t *)(datablocks + (i) ));
+      i++;
+      uint16_t addr2 = *((uint16_t *)(datablocks + (i) ));
+
+      datablocks[0xFFF7] = (uint16_t)(datablocks[addr1] * datablocks[addr2]);
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x0000;
+      outputtobuffer(output);
+    }else if (op == OP_DIV) {
+
+      i++;
+      uint16_t addr1 = *((uint16_t *)(datablocks + (i) ));
+      i++;
+      uint16_t addr2 = *((uint16_t *)(datablocks + (i) ));
+
+      datablocks[0xFFF9] = (uint16_t)(datablocks[addr1] / datablocks[addr2]);
+      datablocks[0xFFFB] = (uint16_t)(datablocks[addr1]% datablocks[addr2]);
+      uint16_t * output = malloc(sizeof(uint16_t));
+      *output = (uint16_t)0x0000;
+      outputtobuffer(output);
+    }
+    else{
       uint16_t * output = malloc(sizeof(uint16_t));
       *output = (uint16_t)0x00;
       outputtobuffer(output);
