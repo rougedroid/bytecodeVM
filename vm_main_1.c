@@ -36,6 +36,8 @@ typedef enum{
   OP_CMP_JMP = 0x0031, // OPCODE [REG1] [REG2] [JMP] --> jumps JMP number of bytes forward. ( JMP must be even )
   OP_MUL = 0X0032, // OPCODE [REG1] [REG2] --> Stored in 0xFFF7 and 0xFFF8
   OP_DIV = 0x0033, // OPCODE [REG1] [REG2] --> Store quotent in 0xFFF9 and 0xFFFA ; Remainder in 0xFFFB and 0xFFFC;
+  OP_CMP_GTR = 0x0034, // OPCODE [REG1] [REG2] [JMP1] [JMP2] --> compares values. true if reg1>reg2. If true, it jumps toJMP1 pointer. If false it jumps to JMP2 pointer.
+  OP_CMP_LSR = 0x0035, // OPCODE [REG1] [REG2] [JMP1] [JMP2] --> compares values. true if reg1<reg2. If true, it jumps toJMP1 pointer. If false it jumps to JMP2 pointer.
 
 }Opcodes;
 // Note to self: A future reimplementation is required. Right now, there are too many arbitrary constraints for this to be a VM. In future, simulate a real chip from datasheet. And encode those constraints and implement clock cycles also. 
@@ -178,6 +180,34 @@ int main(){
 //      i++;
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]==datablocks[addr2]){
+        printf("Comparison Positive\n");
+        i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+      }
+    } else if (op == OP_CMP_GTR) {
+
+      i++;
+      uint16_t addr1 = *((uint16_t *)(datablocks + (i) ));
+      i++;
+      uint16_t addr2 = *((uint16_t *)(datablocks + (i)));
+      i++;
+      uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
+//      i++;
+//      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      if (datablocks[addr1]>datablocks[addr2]){
+        printf("Comparison Positive\n");
+        i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+      }
+    } else if (op == OP_CMP_LSR) {
+
+      i++;
+      uint16_t addr1 = *((uint16_t *)(datablocks + (i) ));
+      i++;
+      uint16_t addr2 = *((uint16_t *)(datablocks + (i)));
+      i++;
+      uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
+//      i++;
+//      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+      if (datablocks[addr1]<datablocks[addr2]){
         printf("Comparison Positive\n");
         i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
