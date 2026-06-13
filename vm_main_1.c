@@ -181,8 +181,8 @@ int main(){
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
 //      i++;
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
-      if (datablocks[addr1]==datablocks[addr2]){
-        printf("Comparison Positive\n");
+      if (datablocks[addr1]!=datablocks[addr2]){
+        printf("Comparison Negative\n");
         i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
     } else if (op == OP_CMP_GTR_JMP) {
@@ -195,8 +195,8 @@ int main(){
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
 //      i++;
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
-      if (datablocks[addr1]>datablocks[addr2]){
-        printf("Comparison Positive\n");
+      if (datablocks[addr1]<=datablocks[addr2]){
+        printf("Comparison Negative\n");
         i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
     } else if (op == OP_CMP_LSR_JMP) {
@@ -209,8 +209,8 @@ int main(){
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
 //      i++;
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
-      if (datablocks[addr1]<datablocks[addr2]){
-        printf("Comparison Positive\n");
+      if (datablocks[addr1]>=datablocks[addr2]){
+        printf("Comparison Negative\n");
         i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
     } else if (op == OP_CMP_GTR) {
