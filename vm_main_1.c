@@ -43,23 +43,33 @@ typedef enum{
   OP_HALT = 0x0038,
 }Opcodes;
 // Note to self: A future reimplementation is required. Right now, there are too many arbitrary constraints for this to be a VM. In future, simulate a real chip from datasheet. And encode those constraints and implement clock cycles also. 
-//  uint16_t instruction_set[] = {
-//    WRITE_CONST_INT, 0x0104, 0x0105,OP_RETURN, 0x0104, WRITE_CONST_INT, 0x0105, 0x0105, OP_RETURN, 0x0105, OP_CMP_JMP, 0x0104, 0x0105, 0x000c, WRITE_CONST_INT, 0x0106, 0x0004, OP_JMP_RELP, 0x0006, WRITE_CONST_INT, 0x0106, 0x0003, OP_RETURN, 0x0106, OP_HALT
-//  };
+  // uint16_t instruction_set[] = {
+  //   WRITE_CONST_INT, 0x0104, 0x0105,OP_RETURN, 0x0104, WRITE_CONST_INT, 0x0105, 0x0105, OP_RETURN, 0x0105, OP_CMP_JMP, 0x0104, 0x0105, 0x000c, WRITE_CONST_INT, 0x0106, 0x0004, OP_JMP_RELP, 0x0006, WRITE_CONST_INT, 0x0106, 0x0003, OP_RETURN, 0x0106, OP_HALT
+  // };
 // rn the integers accepted are 16 bits. i.e. 2 bytes, but we process only single byte integers. 
 // Option 1: make it 1 byte integers -> horrible for everything will have to redesign everything. 
 // Option 2: make it process 2 byte integers and let it output 2 bytes. -> Much simpler and better. 
 
-uint16_t * instruction_set;
+//uint16_t * instruction_set;
  
-void init(){
-  datablocks = malloc(sizeof(uint16_t)*65521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
-  outputbuffer = malloc(sizeof(uint16_t)*1); // 1
-  memset(datablocks, 0, 65521);
+uint16_t instruction_set[] = {WRITE_CONST_INT, 0xffef, 0x105, OP_LOAD_REG, 0xffef, 0xfff0, OP_RETURN, 0xfff0, OP_HALT};
 
-  memset(outputbuffer, 0, 2);
-  
+void print_hex_dump(uint16_t *buffer) {
+  size_t elements = 8;
+    for (size_t i = 0; i < elements; i += 8) {
+        // Print memory offset in hex (each element is 2 bytes)
+        printf("%08zx: ", i * 2);
 
+        // Print the 16-bit values cleanly
+        for (size_t j = 0; j < 8; j++) {
+            if (i + j < elements) {
+                printf("%04x ", buffer[i + j]);
+            } else {
+                printf("     "); // Alignment padding
+            }
+        }
+        printf("\n");
+    }
 }
 
 uint16_t* readBinaryStream() {
@@ -146,23 +156,43 @@ uint16_t* readBinaryStream() {
     // 10. Clean up file handle and update output variables
     fclose(file);
     *out_count = elements_to_read;
+    print_hex_dump(buffer);
+    exit(1);
     return buffer; 
 }
-
+//   uint16_t instruction_set[] = {
+//     0x0020, 0xffef, 0x0105, 0x0025, 0xffef, 0xfff0, 0x0020, 0xffec,
+//     0x0105, 0x0025, 0xffec, 0xffed, 0x0020, 0xffe9, 0x0000, 0x0025,
+//     0xffe9, 0xffea, 0x0022, 0x0037, 0xfff0, 0xffed, 0x0009, 0x0020,
+//     0xffe1, 0x0004, 0x0025, 0xffe1, 0xffea, 0x0029, 0x0007, 0x0020,
+//     0xffdf, 0x0003, 0x0025, 0xffdf, 0xffea, 0x0022, 0x0038
+// };
 
 void outputtobuffer(uint16_t * output){
   memcpy(outputbuffer, output, 2);
 }
 
+void init(){
+  datablocks = malloc(sizeof(uint16_t)*65521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
+  outputbuffer = malloc(sizeof(uint16_t)*1); // 1
+  memset(datablocks, 0, 65521);
+
+  memset(outputbuffer, 0, 2);
+  //instruction_set = readBinaryStream();
+
+
+}
+
 int main(){
   init();
   int instruction_len = (sizeof(instruction_set)/sizeof(instruction_set[0]));
-  memcpy(datablocks, &instruction_set, instruction_len*2);
+  memcpy(datablocks, &instruction_set, 9*2);
   uint16_t op;
   //op = *(test_values)[0]
   int runflag = 1;
   int i =0;
   while (runflag == 1){
+  //while ( i < instruction_len ){
     //memcpy(&op, datablocks + i*2, 2); // Skipping 1 i for returning buffer is fine, cuz they are 16 bit address so like an address value also takes up 2 bytes. so does an opcode. 
     op = *((uint16_t *)(datablocks + i));
 //    printf("Op Code: 0x%04x\n", op);
@@ -368,6 +398,8 @@ int main(){
       *output = (uint16_t)0x0000;
       outputtobuffer(output);
     }else if (op == OP_HALT){
+      printf("OP HALT HIT\n");
+      exit(1);
       runflag = 0;
     }
     else{
@@ -378,6 +410,7 @@ int main(){
     uint16_t outputbyte;
     memcpy(&outputbyte, outputbuffer, 2);
     printf("Output Buffer Value: %d \n", outputbyte);
+    
     i++;
   }
 }
