@@ -2,6 +2,7 @@
 
 ## Overview
 This ISA defines a simple bytecode VM with fixed-size instructions and a flat address space.
+The implementation includes support for reading a default binary instruction stream from `bsp.out`.
 
 ## Instruction Format
 - Each instruction is 2 bytes long.
@@ -18,7 +19,7 @@ This ISA defines a simple bytecode VM with fixed-size instructions and a flat ad
 
 ## Error and Output Buffers
 - Default operation output/error buffers are located in reserved high memory: `0xFFF0` to `0xFFF7`.
-- Output buffer address range: `0xFFFE` to `0xFFFF` (only the last 8 bits are written here).
+- Output buffer is represented as a full 16-bit value and is treated as a 16-bit output path from `0xFFFE` to `0xFFFF`.
 - These high-memory buffer locations are used as the final output path rather than a general-purpose register.
 
 ## OPCODES
@@ -42,6 +43,7 @@ This ISA defines a simple bytecode VM with fixed-size instructions and a flat ad
 | `OP_CMP_LSR` | `0x0035` | `[REG1] [REG2] [JMP1] [JMP2]` | If `REG1 < REG2`, jump to `JMP1`; otherwise jump to `JMP2`. |
 | `OP_CMP_GTR_JMP` | `0x0036` | `[REG1] [REG2] [JMP1] [JMP2]` | Compare registers; if `REG1 > REG2` jump to `JMP1`, otherwise jump to `JMP2`. |
 | `OP_CMP_LSR_JMP` | `0x0037` | `[REG1] [REG2] [JMP1] [JMP2]` | Compare registers; if `REG1 < REG2` jump to `JMP1`, otherwise jump to `JMP2`. |
+| `OP_HALT` | `0x0038` | none | Stop execution immediately. |
 
 ## Reserved Result Addresses
 - Addition result: `0xFFF1` 

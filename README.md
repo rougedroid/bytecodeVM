@@ -19,6 +19,7 @@ BytecodeVM is a minimal but functional virtual machine designed to execute bytec
 ### Memory Layout
 - **Data/Code space**: 0x0000–0xFFF0 (65,521 bytes of usable memory)
 - **Reserved high memory**: 0xFFF0–0xFFFF (output and result buffers)
+- **Output buffer**: 16-bit output path stored as a full `uint16_t` value instead of an 8-bit value
 - **Result addresses**:
   - Addition result: 0xFFF1
   - Subtraction result: 0xFFF3
@@ -42,7 +43,8 @@ BytecodeVM is a minimal but functional virtual machine designed to execute bytec
 | `OP_JMP_RELP` | 0x0029 | Jump forward by even byte count |
 | `OP_JMP_RELN` | 0x0030 | Jump backward by even byte count |
 | `OP_CMP_GTR` | 0x0034 | Jump if greater than |
-| `OP_CMP_LSR` | 0x0035 | Jump if less than |
+| `OP_CMP_LSR` | `0x0035` | Jump if less than |
+| `OP_HALT` | `0x0038` | Stop execution immediately |
 
 For detailed instruction specifications, see [ISA_Definition.md](ISA_Definition.md).
 
@@ -71,7 +73,7 @@ Run the executable:
 ./bytecodevm
 ```
 
-The VM reads bytecode instructions sequentially and executes them. Bytecode programs can:
+The implementation includes support for reading a default binary instruction stream from `bsp.out` in the current working directory. The VM reads bytecode instructions sequentially and executes them. Bytecode programs can:
 - Load constants into registers
 - Perform arithmetic operations
 - Make conditional decisions based on comparisons
@@ -83,6 +85,8 @@ The VM reads bytecode instructions sequentially and executes them. Bytecode prog
 Bytecode is stored as a sequence of **16-bit (uint16_t) words**. Each instruction consists of:
 - A 16-bit opcode
 - Zero or more 16-bit operands depending on the instruction
+
+The default `bsp.out` file must contain an even number of bytes so the 16-bit instruction stream aligns correctly.
 
 For example, the bytecode sequence to load a constant, perform a return, and exit:
 

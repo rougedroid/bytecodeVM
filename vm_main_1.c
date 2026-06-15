@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 uint16_t * datablocks;
-uint8_t * outputbuffer;
+uint16_t * outputbuffer;
 
 
 // Data blocks from address space: 0x0000 to 0xFFF0 -> 65521 Address spaces. Changable Memory. 
@@ -40,24 +40,115 @@ typedef enum{
   OP_CMP_LSR = 0x0035, // OPCODE [REG1] [REG2] [JMP1] [JMP2] --> compares values. true if reg1<reg2. If true, it jumps toJMP1 pointer. If false it jumps to JMP2 pointer.
   OP_CMP_GTR_JMP = 0x0036, // OPCODE [REG1] [REG2] [JMP] --> jumps JMP number of bytes forward. ( JMP must be even )
   OP_CMP_LSR_JMP = 0x0037, // OPCODE [REG1] [REG2] [JMP] --> jumps JMP number of bytes forward. ( JMP must be even )
-
+  OP_HALT = 0x0038,
 }Opcodes;
 // Note to self: A future reimplementation is required. Right now, there are too many arbitrary constraints for this to be a VM. In future, simulate a real chip from datasheet. And encode those constraints and implement clock cycles also. 
-uint16_t test_values[] = {
-  WRITE_CONST_INT, 0x0104, 0x0105,OP_RETURN, 0x0104, WRITE_CONST_INT, 0x0105, 0x0105, OP_RETURN, 0x0105, OP_CMP_JMP, 0x0104, 0x0105, 0x000c, WRITE_CONST_INT, 0x0106, 0x0004, OP_JMP_RELP, 0x0006, WRITE_CONST_INT, 0x0106, 0x0003, OP_RETURN, 0x0106
-};
+//  uint16_t instruction_set[] = {
+//    WRITE_CONST_INT, 0x0104, 0x0105,OP_RETURN, 0x0104, WRITE_CONST_INT, 0x0105, 0x0105, OP_RETURN, 0x0105, OP_CMP_JMP, 0x0104, 0x0105, 0x000c, WRITE_CONST_INT, 0x0106, 0x0004, OP_JMP_RELP, 0x0006, WRITE_CONST_INT, 0x0106, 0x0003, OP_RETURN, 0x0106, OP_HALT
+//  };
 // rn the integers accepted are 16 bits. i.e. 2 bytes, but we process only single byte integers. 
 // Option 1: make it 1 byte integers -> horrible for everything will have to redesign everything. 
 // Option 2: make it process 2 byte integers and let it output 2 bytes. -> Much simpler and better. 
 
+uint16_t * instruction_set;
+ 
 void init(){
-  datablocks = malloc(sizeof(uint8_t)*65521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
-  outputbuffer = malloc(sizeof(uint8_t)*1); // 1
+  datablocks = malloc(sizeof(uint16_t)*65521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
+  outputbuffer = malloc(sizeof(uint16_t)*1); // 1
   memset(datablocks, 0, 65521);
 
   memset(outputbuffer, 0, 2);
-  datablocks[5000]=4;
+  
+
 }
+
+uint16_t* readBinaryStream() {
+    // 1. Defend against garbage inputs
+    char filename[] = "bsp.out";
+    size_t dummy_count = 0;
+    size_t *out_count = &dummy_count;
+    if (filename == NULL || out_count == NULL) {
+        fprintf(stderr, "[ERROR] Invalid arguments passed to readBinaryStream.\n");
+        return NULL;
+    }
+    *out_count = 0;
+
+    // 2. Open the file in "rb" mode (Read Binary)
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        perror("[ERROR] Failed to open file");
+        return NULL;
+    }
+
+    // 3. Determine the exact file size in bytes
+    if (fseek(file, 0, SEEK_END) != 0) {
+        perror("[ERROR] Failed to seek to end of file");
+        fclose(file);
+        return NULL;
+    }
+
+    long signed_size = ftell(file);
+    if (signed_size < 0) {
+        perror("[ERROR] Failed to determine file size via ftell");
+        fclose(file);
+        return NULL;
+    }
+    size_t file_bytes = (size_t)signed_size;
+
+    // 4. Critical check: Is the file actually empty?
+    if (file_bytes == 0) {
+        fprintf(stderr, "[ERROR] File '%s' is empty (0 bytes).\n", filename);
+        fclose(file);
+        return NULL;
+    }
+
+    // 5. Critical check: Is the file size a multiple of 2 bytes (uint16_t)?
+    if (file_bytes % sizeof(uint16_t) != 0) {
+        fprintf(stderr, "[ERROR] File size (%zu bytes) is corrupt. It must be a multiple of %zu bytes for uint16_t alignment.\n", 
+                file_bytes, sizeof(uint16_t));
+        fclose(file);
+        return NULL;
+    }
+
+    // Calculate exact element count
+    size_t elements_to_read = file_bytes / sizeof(uint16_t);
+
+    // 6. Reset file pointer back to the beginning to prepare for the read
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        perror("[ERROR] Failed to reset file pointer to beginning");
+        fclose(file);
+        return NULL;
+    }
+
+    // 7. Dynamic memory allocation with safety check
+    uint16_t *buffer = malloc(file_bytes);
+    if (buffer == NULL) {
+        fprintf(stderr, "[ERROR] Memory allocation failed. Cannot allocate %zu bytes.\n", file_bytes);
+        fclose(file);
+        return NULL;
+    }
+
+    // 8. Read the raw data into our buffer
+    size_t elements_read = fread(buffer, sizeof(uint16_t), elements_to_read, file);
+    
+    // 9. Verify the integrity of the data read
+    if (elements_read != elements_to_read) {
+        if (ferror(file)) {
+            fprintf(stderr, "[ERROR] Direct OS read error occurred while parsing file stream.\n");
+        } else if (feof(file)) {
+            fprintf(stderr, "[ERROR] Unexpected End-of-File reached. File may have been truncated mid-read.\n");
+        }
+        free(buffer);
+        fclose(file);
+        return NULL;
+    }
+
+    // 10. Clean up file handle and update output variables
+    fclose(file);
+    *out_count = elements_to_read;
+    return buffer; 
+}
+
 
 void outputtobuffer(uint16_t * output){
   memcpy(outputbuffer, output, 2);
@@ -65,11 +156,13 @@ void outputtobuffer(uint16_t * output){
 
 int main(){
   init();
-  int instruction_len = (sizeof(test_values)/sizeof(test_values[0]));
-  memcpy(datablocks, &test_values, instruction_len*2);
+  int instruction_len = (sizeof(instruction_set)/sizeof(instruction_set[0]));
+  memcpy(datablocks, &instruction_set, instruction_len*2);
   uint16_t op;
   //op = *(test_values)[0]
-  for (int i = 0; i < instruction_len; i++){
+  int runflag = 1;
+  int i =0;
+  while (runflag == 1){
     //memcpy(&op, datablocks + i*2, 2); // Skipping 1 i for returning buffer is fine, cuz they are 16 bit address so like an address value also takes up 2 bytes. so does an opcode. 
     op = *((uint16_t *)(datablocks + i));
 //    printf("Op Code: 0x%04x\n", op);
@@ -274,6 +367,8 @@ int main(){
       uint16_t * output = malloc(sizeof(uint16_t));
       *output = (uint16_t)0x0000;
       outputtobuffer(output);
+    }else if (op == OP_HALT){
+      runflag = 0;
     }
     else{
       uint16_t * output = malloc(sizeof(uint16_t));
@@ -283,6 +378,7 @@ int main(){
     uint16_t outputbyte;
     memcpy(&outputbyte, outputbuffer, 2);
     printf("Output Buffer Value: %d \n", outputbyte);
+    i++;
   }
 }
 
