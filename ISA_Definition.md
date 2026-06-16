@@ -8,7 +8,7 @@ The implementation reads binary bytecode from `bsp.out` file during execution.
 - Each instruction is 2 bytes (16 bits) long.
 - The VM reads instructions sequentially as 2-byte words.
 - Operands are encoded after the opcode according to each instruction's operand layout.
-- Values are generally processed as unsigned data internally, but some opcodes interpret values as signed when required.
+- All values are processed as unsigned integers (0 to 65,535).
 
 ## Memory and Address Space
 - The VM uses a unified memory from `0x0000` to `0xFFFF` (131,072 bytes total / 65,536 16-bit words).
@@ -72,7 +72,7 @@ The implementation reads binary bytecode from `bsp.out` file during execution.
 - Output is not emitted directly from a register; it must be staged through the reserved output buffer (which lives in separate C memory).
 - The current design lacks a clearly defined register file and general-purpose temporary registers.
 - The memory model is byte-addressed while instructions are word-aligned.
-- The signed constant range is limited to 16-bit values with no explicit overflow handling.
+- The unsigned constant range is limited to 16-bit values (0 to 65,535) with no explicit overflow handling.
 - There is no explicit stack or call frame support for nested procedure calls.
 - Jump addresses cannot use arbitrary byte offsets; they must correspond to instruction boundaries.
 

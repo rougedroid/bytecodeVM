@@ -10,16 +10,6 @@ uint16_t * datablocks;
 uint16_t * outputbuffer;
 
 
-// Data blocks from address space: 0x0000 to 0xFFF0 -> 65521 Address spaces. Changable Memory. 
-// Each pointer points to 1 Byte of data. 
-// 
-// Output Buffer address 0xFFFE - 0xFFFF --> Last 8 bits
-// Default output and error buffers etc etc from 0xFFF0 -> 0xFFF7
-// Addition Result: 0xFFF1 and 0xFFF2 
-// Subtraction Result: 0xFFF3 and 0xFFF4 
-// Overflow Bit: 0xFFF5 and 0xFFF6
-// Multiplication Result:  
-// After changing the data blocks type, there is no longer a need to have 2 bytes for each. But just keeping the diffs cuzz lazyyyyy :) 
 
 typedef enum{
   WRITE_CONST_INT = 0x0020, // OPCODE [REG] [Value] Value is 16 bits so 15 bits of signed int. INT Range = -32768 to +32768.
@@ -42,27 +32,17 @@ typedef enum{
   OP_CMP_LSR_JMP = 0x0037, // OPCODE [REG1] [REG2] [JMP] --> jumps JMP number of bytes forward. ( JMP must be even )
   OP_HALT = 0x0038,
 }Opcodes;
-// Note to self: A future reimplementation is required. Right now, there are too many arbitrary constraints for this to be a VM. In future, simulate a real chip from datasheet. And encode those constraints and implement clock cycles also. 
-  // uint16_t instruction_set[] = {
-  //   WRITE_CONST_INT, 0x0104, 0x0105,OP_RETURN, 0x0104, WRITE_CONST_INT, 0x0105, 0x0105, OP_RETURN, 0x0105, OP_CMP_JMP, 0x0104, 0x0105, 0x000c, WRITE_CONST_INT, 0x0106, 0x0004, OP_JMP_RELP, 0x0006, WRITE_CONST_INT, 0x0106, 0x0003, OP_RETURN, 0x0106, OP_HALT
-  // };
-// rn the integers accepted are 16 bits. i.e. 2 bytes, but we process only single byte integers. 
-// Option 1: make it 1 byte integers -> horrible for everything will have to redesign everything. 
-// Option 2: make it process 2 byte integers and let it output 2 bytes. -> Much simpler and better. 
 
-//uint16_t * instruction_set;
- 
-//uint16_t instruction_set[] = {WRITE_CONST_INT, 0xffef, 0x105, OP_LOAD_REG, 0xffef, 0xfff0, OP_RETURN, 0xfff0, OP_HALT};
 uint16_t * instruction_set;
 size_t * instruction_len;
 
 void print_hex_dump(uint16_t *buffer) {
   size_t elements = 8;
     for (size_t i = 0; i < elements; i += 8) {
-        // Print memory offset in hex (each element is 2 bytes)
+
         printf("%08zx: ", i * 2);
 
-        // Print the 16-bit values cleanly
+
         for (size_t j = 0; j < 8; j++) {
             if (i + j < elements) {
                 printf("%04x ", buffer[i + j]);
@@ -75,7 +55,7 @@ void print_hex_dump(uint16_t *buffer) {
 }
 
 uint16_t* readBinaryStream(size_t * out_count) {
-    // 1. Defend against garbage inputs
+
     char filename[] = "bsp.out";
     
     if (filename == NULL || out_count == NULL) {
@@ -84,14 +64,14 @@ uint16_t* readBinaryStream(size_t * out_count) {
     }
     *out_count = 0;
 
-    // 2. Open the file in "rb" mode (Read Binary)
+
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         perror("[ERROR] Failed to open file");
         return NULL;
     }
 
-    // 3. Determine the exact file size in bytes
+
     if (fseek(file, 0, SEEK_END) != 0) {
         perror("[ERROR] Failed to seek to end of file");
         fclose(file);
@@ -106,7 +86,7 @@ uint16_t* readBinaryStream(size_t * out_count) {
     }
     size_t file_bytes = (size_t)signed_size;
 
-    // 4. Critical check: Is the file actually empty?
+
     if (file_bytes == 0) {
         fprintf(stderr, "[ERROR] File '%s' is empty (0 bytes).\n", filename);
         fclose(file);
@@ -157,65 +137,21 @@ uint16_t* readBinaryStream(size_t * out_count) {
     // 10. Clean up file handle and update output variables
     fclose(file);
     *out_count = elements_to_read;
-    //print_hex_dump(buffer);
-    //exit(1);
+    
     return buffer; 
 }
-/*
-uint16_t instruction_set[] = {
-    // 0x00000000
-    WRITE_CONST_INT, 0xffef, 0x0105, 
-    OP_LOAD_REG,     0xffef, 0xfff0, 
-    WRITE_CONST_INT, 0xffec,
-    
-    // 0x00000010
-    0x0106, 
-    WRITE_CONST_INT, 0xfeff, 0x01a4,
-    OP_LOAD_REG,     0xffec, 0xffed, 
-    WRITE_CONST_INT, 0xffe9, 0x1b39, 
-    OP_LOAD_REG,
-    
-    // 0x00000020
-    0xffe9, 0xffea, 
-    WRITE_CONST_INT, 0xffe6, 0x0005, 
-    OP_LOAD_REG,     0xffe6, 0xffe7,
-    
-    // 0x00000030
-    OP_RETURN,       0xffe7, 
-    OP_CMP_LSR_JMP,  0xfff0, 0xffed, 0x000a, 
-    OP_RETURN,       0xfeff,
-    
-    // 0x00000040
-    WRITE_CONST_INT, 0xffdc, 0x0004, 
-    OP_LOAD_REG,     0xffdc, 0xffe7, 
-    OP_RETURN, 0xffe7,
-    OP_JMP_RELP,     0x0008,
-    
-    // 0x00000050
-    OP_RETURN,       0xffea, 
-    OP_RETURN,       0xffea, 
-    OP_RETURN,       0xffea, 
-    //WRITE_CONST_INT, 0xffd8, 0x0003, 
-    //OP_LOAD_REG,     0xffd8, 0xfee7,
-    
-    // 0x00000060
-    OP_RETURN,       0xffe7, 
-    
-    OP_HALT
-};
-*/
+
 void outputtobuffer(uint16_t * output){
   memcpy(outputbuffer, output, 2);
 }
 
 void init(){
-  datablocks = malloc(sizeof(uint16_t)*75521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
+  datablocks = malloc(sizeof(uint16_t)*65534); // 65534 bytes. 2 bytes for output buffer.
   outputbuffer = malloc(sizeof(uint16_t)*1); // 1
-  memset(datablocks, 0, 65521);
+  memset(datablocks, 0, 65534);
 
   memset(outputbuffer, 0, 2);
-  //instruction_len = malloc(sizeof(size_t));
-  //*instruction_len = (sizeof(instruction_set)/sizeof(instruction_set[0]));
+  
   instruction_len = malloc(sizeof(size_t));
   instruction_set = readBinaryStream(instruction_len);
 
@@ -228,31 +164,27 @@ int main(){
   
   memcpy(datablocks, instruction_set, *instruction_len*2);
   uint16_t op;
-  //op = *(test_values)[0]
+  
   int runflag = 1;
   int i =0;
   while (runflag == 1){
-  //while ( i < instruction_len ){
-    //memcpy(&op, datablocks + i*2, 2); // Skipping 1 i for returning buffer is fine, cuz they are 16 bit address so like an address value also takes up 2 bytes. so does an opcode. 
+  
     op = *((uint16_t *)(datablocks + i));
-//    printf("Op Code: 0x%04x\n", op);
+
     if (op == OP_NONE){
-//      printf("In OP1 \n");
+
       uint16_t * output = malloc(sizeof(uint16_t));
       *output = (uint16_t)0x00;
       outputtobuffer(output);
     } else if (op == OP_RETURN) {
-      //printf("In OP_RETURN \n");
+      ;
 
       uint16_t addr = *((uint16_t *)(datablocks + (i + 1)));
-      //printf("Address: %d\n",addr );
-//      printf("Addr: %d \n", addr);
+      
       i++; // consume the operand word
 
       uint16_t output = ((uint16_t *)datablocks)[addr];
-      //printf("Output: %d \n", output);
-      // The mysterious byte monster has struck again. ITS STILL SHIFTING BY 2 BYTES.
-      // SHIFT ERROR FIXED. MEMSET WAS COPYING 5000 BYTES FROM 0 TO 4999. So when i called 5000, it was on 0. but when i used memset to set 5002, and called 5000, memset set the bytes from 0 to 5001. So then, it appeared like there was a shift of 2 bytes. 
+      
       outputtobuffer(&output);
       
     } else if (op == WRITE_CONST_INT){
@@ -345,8 +277,7 @@ int main(){
       uint16_t addr2 = *((uint16_t *)(datablocks + (i)));
       i++;
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
-//      i++;
-//      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+
       if (datablocks[addr1]!=datablocks[addr2]){
         printf("Comparison Negative\n");
         i = i + jmp; // jmp number of instructions to jump forward
@@ -359,8 +290,7 @@ int main(){
       uint16_t addr2 = *((uint16_t *)(datablocks + (i)));
       i++;
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
-//      i++;
-//      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+
       if (datablocks[addr1]<=datablocks[addr2]){
         printf("Comparison Negative\n");
         i = i + jmp; // jmp number of instructions to jump forward
@@ -373,8 +303,7 @@ int main(){
       uint16_t addr2 = *((uint16_t *)(datablocks + (i)));
       i++;
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
-//      i++;
-//      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+
       if (datablocks[addr1]>=datablocks[addr2]){
         printf("Comparison Negative\n");
         i = i + jmp; // jmp number of instructions to jump forward
@@ -387,8 +316,7 @@ int main(){
       uint16_t addr2 = *((uint16_t *)(datablocks + (i)));
       i++;
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
-//      i++;
-//      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+
       if (datablocks[addr1]>datablocks[addr2]){
         printf("Comparison Positive\n");
         i = i + jmp; // jmp number of instructions to jump forward
@@ -401,8 +329,7 @@ int main(){
       uint16_t addr2 = *((uint16_t *)(datablocks + (i)));
       i++;
       uint16_t jmp = *((uint16_t *)(datablocks + (i) ));
-//      i++;
-//      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
+
       if (datablocks[addr1]<datablocks[addr2]){
         printf("Comparison Positive\n");
         i = i + jmp; // jmp number of instructions to jump forward

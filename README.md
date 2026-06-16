@@ -123,7 +123,7 @@ All addresses and jump offsets are specified as instruction indices (number of 1
 - Fixed 2-byte instruction format limits code density
 - Arithmetic results stored in fixed memory addresses, requiring extra copy instructions
 - No explicit stack or call frame support for nested procedures
-- Limited signed constant range (16-bit only)
+- Limited unsigned constant range (16-bit only)
 
 ## Contributing
 

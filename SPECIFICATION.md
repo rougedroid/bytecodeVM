@@ -178,7 +178,7 @@ BytecodeVM is a 16-bit virtual machine architecture implementing a von Neumann c
 | Metric | Value |
 |---|---|
 | Maximum address | 0xFFFF (65,535) |
-| Maximum instruction index | 0x7FFF (32,767 for signed, 65,535 unsigned) |
+| Maximum instruction index | 0xFFFF (65,535) |
 | Maximum constant value | 0xFFFF (65,535) |
 | Minimum constant value | 0x0000 (0) |
 | Maximum memory allocation | 65,536 16-bit words (131,072 bytes) |
