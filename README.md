@@ -17,21 +17,24 @@ BytecodeVM is a minimal but functional virtual machine designed to execute bytec
 ## Architecture Highlights
 
 ### Memory Layout
-- **Data/Code space**: 0x0000–0xFFF0 (65,521 bytes of usable memory)
-- **Reserved high memory**: 0xFFF0–0xFFFF (output and result buffers)
-- **Output buffer**: 16-bit output path stored as a full `uint16_t` value instead of an 8-bit value
+- **Total unified memory**: 0x0000–0xFFFF (131,072 bytes / 65,536 16-bit words)
+- **Data/Code space**: 0x0000–0xFFF0 (65,521 usable memory locations)
+- **Reserved high memory**: 0xFFF0–0xFFFF (~16 bytes, used for result buffers and special registers)
 - **Result addresses**:
   - Addition result: 0xFFF1
   - Subtraction result: 0xFFF3
   - Multiplication result: 0xFFF7
   - Division quotient: 0xFFF9, remainder: 0xFFFB
 
+### Output Buffer Note
+The output buffer has its own address space location (0xFFFE–0xFFFF) but **outputs to a separate memory chunk in the C runtime**, not directly to the address space. Each instruction execution writes its output status to this separate buffer, which is printed after each instruction via `printf()`.
+
 ### Supported Instructions
 
 | Opcode | Hex | Description |
 |--------|-----|-------------|
 | `OP_NONE` | 0x0000 | No operation (skip) |
-| `WRITE_CONST_INT` | 0x0020 | Write 16-bit signed integer to register |
+| `WRITE_CONST_INT` | 0x0020 | Write 16-bit unsigned integer to register |
 | `OP_LOAD_REG` | 0x0025 | Copy register value |
 | `OP_RETURN` | 0x0022 | Print register value |
 | `OP_ADD` | 0x0024 | Add two registers |
@@ -39,9 +42,9 @@ BytecodeVM is a minimal but functional virtual machine designed to execute bytec
 | `OP_MUL` | 0x0032 | Multiply two registers |
 | `OP_DIV` | 0x0033 | Divide two registers |
 | `OP_CMP` | 0x0028 | Compare registers with conditional jumps |
-| `OP_JUMP` | 0x0027 | Unconditional jump to address |
-| `OP_JMP_RELP` | 0x0029 | Jump forward by even byte count |
-| `OP_JMP_RELN` | 0x0030 | Jump backward by even byte count |
+| `OP_JUMP` | 0x0027 | Unconditional jump to instruction address |
+| `OP_JMP_RELP` | 0x0029 | Jump forward by instruction count |
+| `OP_JMP_RELN` | 0x0030 | Jump backward by instruction count |
 | `OP_CMP_GTR` | 0x0034 | Jump if greater than |
 | `OP_CMP_LSR` | `0x0035` | Jump if less than |
 | `OP_HALT` | `0x0038` | Stop execution immediately |
@@ -73,7 +76,12 @@ Run the executable:
 ./bytecodevm
 ```
 
-The implementation includes support for reading a default binary instruction stream from `bsp.out` in the current working directory. The VM reads bytecode instructions sequentially and executes them. Bytecode programs can:
+### Input/Output
+
+- **Input**: The VM reads binary bytecode from `bsp.out` file in the current working directory
+- **Output**: After each instruction execution, the output buffer value is printed to stdout via `printf("Output Buffer Value: %d \n", outputbyte);`
+
+Bytecode programs can:
 - Load constants into registers
 - Perform arithmetic operations
 - Make conditional decisions based on comparisons
@@ -81,7 +89,7 @@ The implementation includes support for reading a default binary instruction str
 - Output results through the reserved output buffer
 
 ## Bytecode Format
-
+`bsp.out` binary file must contain an even number of bytes to ensure proper 16-bit word alignment. All addresses and jump offsets are specified as **instruction counts** (number of 16-bit words), not byte offsets
 Bytecode is stored as a sequence of **16-bit (uint16_t) words**. Each instruction consists of:
 - A 16-bit opcode
 - Zero or more 16-bit operands depending on the instruction
@@ -107,16 +115,15 @@ uint16_t test_values[] = {
 };
 ```
 
-All jump offsets and address values must be even numbers (word-aligned).
+All addresses and jump offsets are specified as instruction indices (number of 16-bit words from the start of memory).
 
 ## Current Limitations
 
-- Large portion of high memory reserved for buffers reduces effective data space
+- Limited effective data space due to reserved high memory for special buffers and result registers
 - Fixed 2-byte instruction format limits code density
 - Arithmetic results stored in fixed memory addresses, requiring extra copy instructions
 - No explicit stack or call frame support for nested procedures
 - Limited signed constant range (16-bit only)
-- Jump offsets must be even numbers
 
 ## Contributing
 

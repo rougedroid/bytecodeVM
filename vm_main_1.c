@@ -317,7 +317,7 @@ int main(){
 
       i++;
       uint16_t addr = *((uint16_t *)(datablocks + (i)));
-      i = (addr/2) -1;
+      i = addr - 1;
       uint16_t * output = malloc(sizeof(uint16_t));
       *output = (uint16_t)0x00;
       outputtobuffer(output);
@@ -333,9 +333,9 @@ int main(){
       uint16_t jmp2 = *((uint16_t *)(datablocks + (i) ));
       
       if (datablocks[addr1]==datablocks[addr2]){
-        i = (jmp1/2) -1;
+        i = jmp1 - 1;
       }else{
-        i = (jmp2/2) -1;
+        i = jmp2 - 1;
       }
     } else if (op == OP_CMP_JMP) {
 
@@ -349,7 +349,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]!=datablocks[addr2]){
         printf("Comparison Negative\n");
-        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + jmp; // jmp number of instructions to jump forward
       }
     } else if (op == OP_CMP_GTR_JMP) {
 
@@ -363,7 +363,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]<=datablocks[addr2]){
         printf("Comparison Negative\n");
-        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + jmp; // jmp number of instructions to jump forward
       }
     } else if (op == OP_CMP_LSR_JMP) {
 
@@ -377,7 +377,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]>=datablocks[addr2]){
         printf("Comparison Negative\n");
-        i = i + (jmp) -1 ; // jmp number of instruction offset from current position. -1 to counter the i++
+        i = i + jmp; // jmp number of instructions to jump forward
       }
     } else if (op == OP_CMP_GTR) {
 
@@ -391,7 +391,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]>datablocks[addr2]){
         printf("Comparison Positive\n");
-        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + jmp; // jmp number of instructions to jump forward
       }
     } else if (op == OP_CMP_LSR) {
 
@@ -405,18 +405,18 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]<datablocks[addr2]){
         printf("Comparison Positive\n");
-        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + jmp; // jmp number of instructions to jump forward
       }
     } else if (op == OP_JMP_RELP) {
 
       i++;
       uint16_t value = *((uint16_t *)(datablocks + (i) ));
-      i = i + (value);
+      i = i + value; // value is number of instructions to jump forward
     }else if (op == OP_JMP_RELN) {
       i++;
       uint16_t value = *((uint16_t *)(datablocks + (i)));
 
-      i = i - (value);
+      i = i - value; // value is number of instructions to jump backward
     }else if (op == OP_MUL) {
 
       i++;
