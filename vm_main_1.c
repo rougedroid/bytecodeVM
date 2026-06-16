@@ -52,7 +52,9 @@ typedef enum{
 
 //uint16_t * instruction_set;
  
-uint16_t instruction_set[] = {WRITE_CONST_INT, 0xffef, 0x105, OP_LOAD_REG, 0xffef, 0xfff0, OP_RETURN, 0xfff0, OP_HALT};
+//uint16_t instruction_set[] = {WRITE_CONST_INT, 0xffef, 0x105, OP_LOAD_REG, 0xffef, 0xfff0, OP_RETURN, 0xfff0, OP_HALT};
+uint16_t * instruction_set;
+size_t * instruction_len;
 
 void print_hex_dump(uint16_t *buffer) {
   size_t elements = 8;
@@ -72,11 +74,10 @@ void print_hex_dump(uint16_t *buffer) {
     }
 }
 
-uint16_t* readBinaryStream() {
+uint16_t* readBinaryStream(size_t * out_count) {
     // 1. Defend against garbage inputs
     char filename[] = "bsp.out";
-    size_t dummy_count = 0;
-    size_t *out_count = &dummy_count;
+    
     if (filename == NULL || out_count == NULL) {
         fprintf(stderr, "[ERROR] Invalid arguments passed to readBinaryStream.\n");
         return NULL;
@@ -156,37 +157,76 @@ uint16_t* readBinaryStream() {
     // 10. Clean up file handle and update output variables
     fclose(file);
     *out_count = elements_to_read;
-    print_hex_dump(buffer);
-    exit(1);
+    //print_hex_dump(buffer);
+    //exit(1);
     return buffer; 
 }
-//   uint16_t instruction_set[] = {
-//     0x0020, 0xffef, 0x0105, 0x0025, 0xffef, 0xfff0, 0x0020, 0xffec,
-//     0x0105, 0x0025, 0xffec, 0xffed, 0x0020, 0xffe9, 0x0000, 0x0025,
-//     0xffe9, 0xffea, 0x0022, 0x0037, 0xfff0, 0xffed, 0x0009, 0x0020,
-//     0xffe1, 0x0004, 0x0025, 0xffe1, 0xffea, 0x0029, 0x0007, 0x0020,
-//     0xffdf, 0x0003, 0x0025, 0xffdf, 0xffea, 0x0022, 0x0038
-// };
-
+/*
+uint16_t instruction_set[] = {
+    // 0x00000000
+    WRITE_CONST_INT, 0xffef, 0x0105, 
+    OP_LOAD_REG,     0xffef, 0xfff0, 
+    WRITE_CONST_INT, 0xffec,
+    
+    // 0x00000010
+    0x0106, 
+    WRITE_CONST_INT, 0xfeff, 0x01a4,
+    OP_LOAD_REG,     0xffec, 0xffed, 
+    WRITE_CONST_INT, 0xffe9, 0x1b39, 
+    OP_LOAD_REG,
+    
+    // 0x00000020
+    0xffe9, 0xffea, 
+    WRITE_CONST_INT, 0xffe6, 0x0005, 
+    OP_LOAD_REG,     0xffe6, 0xffe7,
+    
+    // 0x00000030
+    OP_RETURN,       0xffe7, 
+    OP_CMP_LSR_JMP,  0xfff0, 0xffed, 0x000a, 
+    OP_RETURN,       0xfeff,
+    
+    // 0x00000040
+    WRITE_CONST_INT, 0xffdc, 0x0004, 
+    OP_LOAD_REG,     0xffdc, 0xffe7, 
+    OP_RETURN, 0xffe7,
+    OP_JMP_RELP,     0x0008,
+    
+    // 0x00000050
+    OP_RETURN,       0xffea, 
+    OP_RETURN,       0xffea, 
+    OP_RETURN,       0xffea, 
+    //WRITE_CONST_INT, 0xffd8, 0x0003, 
+    //OP_LOAD_REG,     0xffd8, 0xfee7,
+    
+    // 0x00000060
+    OP_RETURN,       0xffe7, 
+    
+    OP_HALT
+};
+*/
 void outputtobuffer(uint16_t * output){
   memcpy(outputbuffer, output, 2);
 }
 
 void init(){
-  datablocks = malloc(sizeof(uint16_t)*65521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
+  datablocks = malloc(sizeof(uint16_t)*75521); // 65521 bytes. 1 byte is 8 bits ( uint8_t)
   outputbuffer = malloc(sizeof(uint16_t)*1); // 1
   memset(datablocks, 0, 65521);
 
   memset(outputbuffer, 0, 2);
-  //instruction_set = readBinaryStream();
+  //instruction_len = malloc(sizeof(size_t));
+  //*instruction_len = (sizeof(instruction_set)/sizeof(instruction_set[0]));
+  instruction_len = malloc(sizeof(size_t));
+  instruction_set = readBinaryStream(instruction_len);
+
 
 
 }
 
 int main(){
   init();
-  int instruction_len = (sizeof(instruction_set)/sizeof(instruction_set[0]));
-  memcpy(datablocks, &instruction_set, 9*2);
+  
+  memcpy(datablocks, instruction_set, *instruction_len*2);
   uint16_t op;
   //op = *(test_values)[0]
   int runflag = 1;
@@ -202,12 +242,15 @@ int main(){
       *output = (uint16_t)0x00;
       outputtobuffer(output);
     } else if (op == OP_RETURN) {
-//      printf("In OP_RETURN \n");
+      //printf("In OP_RETURN \n");
+
       uint16_t addr = *((uint16_t *)(datablocks + (i + 1)));
+      //printf("Address: %d\n",addr );
 //      printf("Addr: %d \n", addr);
       i++; // consume the operand word
 
       uint16_t output = ((uint16_t *)datablocks)[addr];
+      //printf("Output: %d \n", output);
       // The mysterious byte monster has struck again. ITS STILL SHIFTING BY 2 BYTES.
       // SHIFT ERROR FIXED. MEMSET WAS COPYING 5000 BYTES FROM 0 TO 4999. So when i called 5000, it was on 0. but when i used memset to set 5002, and called 5000, memset set the bytes from 0 to 5001. So then, it appeared like there was a shift of 2 bytes. 
       outputtobuffer(&output);
@@ -238,7 +281,7 @@ int main(){
       outputtobuffer(output);
       
     } else if (op == OP_LOAD_REG) {
-      
+      //printf("Loading reg \n");
       i++;
       uint16_t addr1 = *((uint16_t *)(datablocks + (i) ));
       i++;
@@ -306,7 +349,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]!=datablocks[addr2]){
         printf("Comparison Negative\n");
-        i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
     } else if (op == OP_CMP_GTR_JMP) {
 
@@ -320,7 +363,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]<=datablocks[addr2]){
         printf("Comparison Negative\n");
-        i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
     } else if (op == OP_CMP_LSR_JMP) {
 
@@ -334,7 +377,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]>=datablocks[addr2]){
         printf("Comparison Negative\n");
-        i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + (jmp) -1 ; // jmp number of instruction offset from current position. -1 to counter the i++
       }
     } else if (op == OP_CMP_GTR) {
 
@@ -348,7 +391,7 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]>datablocks[addr2]){
         printf("Comparison Positive\n");
-        i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
     } else if (op == OP_CMP_LSR) {
 
@@ -362,18 +405,18 @@ int main(){
 //      uint16_t jmp2 = *((uint16_t *)((uint8_t *)datablocks + (i) * 2));
       if (datablocks[addr1]<datablocks[addr2]){
         printf("Comparison Positive\n");
-        i = i + (jmp/2) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
+        i = i + (jmp) -1 ; // jmp number of bytes offset from current position. -1 to counter the i++
       }
     } else if (op == OP_JMP_RELP) {
 
       i++;
       uint16_t value = *((uint16_t *)(datablocks + (i) ));
-      i = i + (value/2);
+      i = i + (value);
     }else if (op == OP_JMP_RELN) {
       i++;
       uint16_t value = *((uint16_t *)(datablocks + (i)));
 
-      i = i - (value/2);
+      i = i - (value);
     }else if (op == OP_MUL) {
 
       i++;
@@ -398,8 +441,8 @@ int main(){
       *output = (uint16_t)0x0000;
       outputtobuffer(output);
     }else if (op == OP_HALT){
-      printf("OP HALT HIT\n");
-      exit(1);
+      
+      
       runflag = 0;
     }
     else{
@@ -413,6 +456,7 @@ int main(){
     
     i++;
   }
+  exit(0);
 }
 
 
